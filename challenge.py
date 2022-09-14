@@ -44,6 +44,8 @@ df = df.loc[(df["Code postal"] > 74999) & (df["Code postal"] < 75991)]
 df["Code postal"] = df["Code postal"].astype(int)
 
 df["Code INSEE"] = df["Code departement"].astype(str) + df["Code commune"].astype(str)
+
+# created a unique id to merge with the GIS data
 df["id"] = (
     df["Code INSEE"].astype(str)
     + "000"
@@ -65,6 +67,9 @@ ax.set_axis_off()
 plt.show()
 
 # %% merged the two dataset and found the centroid of each location, the centroids was used to plot the transaction history across the map of Paris.
+
+# The rational for subseting the data and only working with the rows who's coordinates map to the gis data is because the aim is to build a model that predicts price per m2 given coordinates and rows that do not map the gis data are effectively outside of the scope of this project.
+
 df2 = gis_df.merge(df, how="right", on="id")
 df2 = gpd.GeoDataFrame(df2)
 
@@ -74,7 +79,7 @@ df2["lat"] = df3.centroid.y
 print("Merged dataframe between gis df and tabular df as the shape:", df2.shape)
 gdf = gpd.GeoDataFrame(df2.copy(), geometry=gpd.points_from_xy(df2.lon, df2.lat))
 
-# created a
+# aggregated the area to one column
 gdf["Total Surface Carrez"] = np.nansum(
     gdf[
         [
@@ -90,6 +95,7 @@ gdf["Total Surface Carrez"] = np.nansum(
     axis=1,
 )
 
+# this done to avoid a zero division error
 gdf = gdf.loc[
     (~gdf["Valeur fonciere"].isna())
     & (~gdf.lat.isna())
