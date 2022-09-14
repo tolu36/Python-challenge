@@ -39,6 +39,7 @@ for col in num_col:
     df[col] = df[col].str.replace(",", ".")
     df[col] = df[col].astype(float)
 
+# filtered the data for only Paris related transaction
 df = df.loc[(df["Code postal"] > 74999) & (df["Code postal"] < 75991)]
 df["Code postal"] = df["Code postal"].astype(int)
 
@@ -72,6 +73,8 @@ df2["lon"] = df3.centroid.x
 df2["lat"] = df3.centroid.y
 print("Merged dataframe between gis df and tabular df as the shape:", df2.shape)
 gdf = gpd.GeoDataFrame(df2.copy(), geometry=gpd.points_from_xy(df2.lon, df2.lat))
+
+# created a
 gdf["Total Surface Carrez"] = np.nansum(
     gdf[
         [
@@ -287,6 +290,7 @@ X_test_sc = X_test
 # Ways to improve it, I believe the location data maybe to granular. I think given more time, and further data wrangling I could aggregate the data to a district level and use district as my location variable rather than coordinates.
 #
 # There could be presents of outliers that is degrading the model, for example district 2, district with the largest mean property, has a mean property value larger than the next 3 districts. Yet it only accounts for 53 transactions of out over 5k rows.
+# overall location alone is not enough to correctly determine the price per m2.
 
 seed(123)
 knnreg = KNeighborsRegressor()
@@ -309,8 +313,8 @@ def price_per_m2(lat, lon, commune=None):
             if v.contains(Point(lat, lon)).values[0] == True:
                 temp["commune"] = int(k)
                 break
-        if temp["commune"].isna():
-            return "The location provided is not in Paris."
+    if temp["commune"].values[0] == None:
+        return "The location provided is not in Paris."
     temp[df_encod_dict.iloc[:, :-1].columns] = (
         df_encod_dict.iloc[:, :-1]
         .loc[df_encod_dict.cat == temp["commune"].values[0]]
