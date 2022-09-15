@@ -135,8 +135,26 @@ plt.show()
 # checked to see if the data is spans several years; after filtering and cleaning we have data only from 2020.
 gdf["Date mutation"].str[-4:].sort_values().unique()
 
-gdf["Nombre pieces principales"].fillna(1, inplace=True)
 
+for i in list(gdf["commune"].unique()):
+    tmp = int(
+        gdf["Nombre pieces principales"]
+        .loc[(gdf["commune"] == i) & (~gdf["Nombre pieces principales"].isna())]
+        .mean()
+    )
+    gdf.loc[
+        (gdf["commune"] == i) & (gdf["Nombre pieces principales"].isna()),
+        ["Nombre pieces principales"],
+    ] = tmp
+
+    tmp = int(
+        gdf["Code type local"]
+        .loc[(gdf["commune"] == i) & (~gdf["Code type local"].isna())]
+        .mean()
+    )
+    gdf.loc[
+        (gdf["commune"] == i) & (gdf["Code type local"].isna()), ["Code type local"]
+    ] = tmp
 # %% Performed some EDA to get a better idea of the data characteristics and distribution.
 
 # Found that most of the transaction in our data is Apartment property. On average industrial properties cost more per square meter than Apartments or houses.
@@ -266,19 +284,31 @@ fig.show()
 
 
 #%% KNN model build first created the model data using location (lat, lon, commune) has my only predictor variables; the response variable being price_per_m2 (price/m2)
-cols = ["lat", "lon", "commune", "price_per_m2"]
+cols = [
+    "Nombre de lots",
+    "Nombre pieces principales",
+    "Code type local",
+    "lon",
+    "lat",
+    "commune",
+    "price_per_m2",
+]
 
 df_mod = gdf[cols].copy()
 df_x = df_mod.iloc[:, :-1]
-encoder = ce.BinaryEncoder(cols=["commune"], return_df=True)
+encoder = ce.BinaryEncoder(cols=["commune", "Code type local"], return_df=True)
 data_encoded = encoder.fit_transform(df_x)
 data_encoded["cat"] = df_x["commune"]
-df_encod_dict = data_encoded.iloc[:, 2:].drop_duplicates()
+
+df_encod_dict = data_encoded.iloc[:, 7:].drop_duplicates()
 df_y = df_mod["price_per_m2"]
+data_encoded["local"] = df_x["Code type local"]
+cols = [col for col in data_encoded.columns if "local" in col]
+df_encod_dict2 = data_encoded[cols].drop_duplicates()
 
 # split the data into train and test (75/25) split and used stratified sampling to ensure a fair representation of each district within the train set.
 X_train, X_test, y_train, y_test = train_test_split(
-    data_encoded.iloc[:, :-1],
+    data_encoded.iloc[:, :-2],
     df_y,
     random_state=0,
     stratify=df_x["commune"].astype(str),
@@ -311,28 +341,52 @@ print(f"R-squared test score: {gr_reg_acc.score(X_test_sc, y_test)}")
 
 
 # %% This function effectively takes in lat and lon coordinates (commune is optional) and predicts the price per m2.
-def price_per_m2(lat, lon, commune=None):
-    temp = pd.DataFrame({"lat": lat, "lon": lon, "commune": commune}, index=[0])
+def price_per_m2(lon, lat, commune=None, local=None, lot=None, room=None):
+    temp = pd.DataFrame({"lon": lon, "lat": lat, "commune": commune}, index=[0])
     if commune == None:
         for k, v in mul_pl_lst.items():
-            if v.contains(Point(lat, lon)).values[0] == True:
+            if v.contains(Point(lon, lat)).values[0] == True:
                 temp["commune"] = int(k)
+                commune = int(k)
                 break
     if temp["commune"].values[0] == None:
         return "The location provided is not in Paris."
+    if local == None:
+        tmp = int(gdf["Code type local"].loc[(gdf["commune"] == commune)].mean())
+        temp["local"] = tmp
+        local = tmp
+    if lot == None:
+        tmp = int(gdf["Nombre de lots"].loc[(gdf["commune"] == commune)].mean())
+        temp["Nombre de lots"] = tmp
+        lot = tmp
+    if room == None:
+        tmp = int(
+            gdf["Nombre pieces principales"].loc[(gdf["commune"] == commune)].mean()
+        )
+        temp["Nombre pieces principales"] = tmp
+        room = tmp
+
     temp[df_encod_dict.iloc[:, :-1].columns] = (
         df_encod_dict.iloc[:, :-1]
         .loc[df_encod_dict.cat == temp["commune"].values[0]]
         .values
     )
-    temp.drop(columns=["commune"], inplace=True)
-    features = [[lat, lon, commune]]
+    temp[df_encod_dict2.iloc[:, :-1].columns] = (
+        df_encod_dict2.iloc[:, :-1]
+        .loc[df_encod_dict2.local == temp["local"].values[0]]
+        .values
+    )
+    temp.drop(columns=["commune", "local"], inplace=True)
+    features = [[lon, lat, commune, local, lot, room]]
+    temp = temp[X_train.columns]
     print(
         f"Based on the coordinates {features[0]}, the approximate price per square meter in that area is:  {gr_reg_acc.predict(temp)}"
     )
 
 
 price_per_m2(652455.920961, 6.862873e06)
+
+# The model improved slightly after including building specific detail variables to the model ("Nombre de lots","Nombre pieces principales", "Code type local",).
 
 ######################################################################################################################################################################################################################
 # %% in attempt to retain more of the data I tried scrapping hte lat and lon coordinate from the internet, however, after 1.4k hits to the site I exceed my limit and was no longer allowed to query the site.
