@@ -136,6 +136,7 @@ plt.show()
 gdf["Date mutation"].str[-4:].sort_values().unique()
 
 gdf["Nombre pieces principales"].fillna(1, inplace=True)
+
 # %% Performed some EDA to get a better idea of the data characteristics and distribution.
 
 # Found that most of the transaction in our data is Apartment property. On average industrial properties cost more per square meter than Apartments or houses.
@@ -276,7 +277,6 @@ df_encod_dict = data_encoded.iloc[:, 2:].drop_duplicates()
 df_y = df_mod["price_per_m2"]
 
 # split the data into train and test (75/25) split and used stratified sampling to ensure a fair representation of each district within the train set.
-
 X_train, X_test, y_train, y_test = train_test_split(
     data_encoded.iloc[:, :-1],
     df_y,
@@ -297,7 +297,6 @@ X_test_sc = X_test
 #
 # There could be presents of outliers that is degrading the model, for example district 2, district with the largest mean property, has a mean property value larger than the next 3 districts. Yet it only accounts for 53 transactions of out over 5k rows.
 # overall location alone is not enough to correctly determine the price per m2.
-
 seed(123)
 knnreg = KNeighborsRegressor()
 k = np.arange(1, 51)
@@ -309,9 +308,9 @@ print(f"Grid best parameter (max. accuracy): {gr_reg_acc.best_params_}")
 print(f"Grid best score (accuracy): {gr_reg_acc.best_score_}")
 print(f"Training R-Squared score: {gr_reg_acc.score(X_train_sc, y_train)}")
 print(f"R-squared test score: {gr_reg_acc.score(X_test_sc, y_test)}")
+
+
 # %% This function effectively takes in lat and lon coordinates (commune is optional) and predicts the price per m2.
-
-
 def price_per_m2(lat, lon, commune=None):
     temp = pd.DataFrame({"lat": lat, "lon": lon, "commune": commune}, index=[0])
     if commune == None:
@@ -334,6 +333,8 @@ def price_per_m2(lat, lon, commune=None):
 
 
 price_per_m2(652455.920961, 6.862873e06)
+
+######################################################################################################################################################################################################################
 # %% in attempt to retain more of the data I tried scrapping hte lat and lon coordinate from the internet, however, after 1.4k hits to the site I exceed my limit and was no longer allowed to query the site.
 import requests
 import urllib.parse
