@@ -6,7 +6,7 @@ import geopandas as gpd
 from shapely.geometry import Point
 import matplotlib.pyplot as plt
 import mapclassify as mc
-from shapely.ops import cascaded_union
+from shapely.ops import unary_union
 import seaborn as sns
 
 color = sns.color_palette()
@@ -112,7 +112,7 @@ gdf = gdf.loc[:, gdf.isnull().mean() < 1]
 mul_pl_lst = {}
 for i in list(gdf.commune.unique()):
     polygons = [gis_df.geometry.loc[gis_df["commune"] == i].unique()]
-    mul_pl_lst[i] = gpd.GeoSeries(cascaded_union(polygons[0]))
+    mul_pl_lst[i] = gpd.GeoSeries(unary_union(polygons[0]))
 
 print("Cleaned dataset as the shape:", gdf.shape)
 
