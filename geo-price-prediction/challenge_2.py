@@ -1,6 +1,14 @@
 # %%
 # The purpose of the exercise is to build a model to estimate the real estate prices of old apartments in Paris. The final goal is to have a model which, given a point in Paris (geographical coordinates), can return an estimate, as precise as possible, of the price per m2. We suggest you implement a nearest neighbor method.
 
+
+# To do this, you have two freely accessible databases available:
+
+# The list of real estate transactions carried out on the entire French territory since 2014: https://www.data.gouv.fr/en/datasets/r/90a98de0-f562-4328-aa16-fe0dd1dca60f You will have to work a little on these data and clean them. To help you, you will find documentation here: https://www.data.gouv.fr/en/datasets/r/d573456c-76eb-4276-b91c-e6b9c89d6656
+# The list of cadastral parcels in Paris, which should allow you to associate geographical coordinates to each transaction: https://cadastre.data.gouv.fr/data/etalab-cadastre/2021-04-01/shp/departements/75/cadastre-75-parcelles-shp.zip
+
+
+# the following links above to download the needed data into the challenge_files folder:
 # %% importing needed packages.
 import pandas as pd
 import numpy as np
