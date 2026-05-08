@@ -1147,3 +1147,24 @@ recall_test, precision_test, accuracy_test, roc_auc_test = evaluate_model_perfor
 #     •  Competitor Analysis: Insights into whether clients are subscribed to similar services at other institutions and how those services compare.
 #     •  Transaction Data: Data on spending patterns to identify clients who are more likely to be subscribers.
 #
+# %%
+
+
+def gcd(a, b):
+    while b:
+        a, b = b, a % b  # Euclidean algorithm
+    return a
+
+
+def lcm(a, b):
+    return (a * b) // gcd(a, b)  # LCM formula
+
+
+def smallest_multiple(target):
+    result = 1
+    for i in range(1, target + 1):
+        result = lcm(result, i)  # Compute LCM iteratively
+    return result
+
+
+smallest_multiple(5)
